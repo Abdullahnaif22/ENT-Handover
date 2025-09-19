@@ -1,36 +1,49 @@
-from datetime import datetime, time
+from datetime import time
 import streamlit as st
 from auth import require_auth, logout_button
-from db import ensure_schema, DB_PATH, q, df, exec1
+from db import ensure_schema, q, df, exec1
 from utils import dob_to_age, priority_pill, status_pill
 
 st.set_page_config(page_title="Patient Details • ENT Handover", page_icon="🩺", layout="wide")
 ensure_schema(); require_auth()
-st.sidebar.title("🏥 ENT Handover"); st.sidebar.caption(f"DB file: `{DB_PATH}`"); logout_button()
+st.sidebar.title("🏥 ENT Handover")
+logout_button()
 
 st.subheader("🧾 Patient Details")
+
+# ---- Open patient selector at top ----
+all_df = df("SELECT id, patient_name, hospital_number FROM patients ORDER BY created_at DESC")
+ids_labels = [(int(r["id"]), f'{r["patient_name"]} • {r["hospital_number"]} (ID {int(r["id"])})') for _, r in all_df.iterrows()]
+
+st.markdown("**Open patient:**")
+if ids_labels:
+    chosen = st.selectbox(
+        "Select",
+        options=ids_labels,
+        format_func=lambda x: x[1],
+        label_visibility="collapsed",
+        key="patients_selectbox_details",
+    )
+    if st.button("Open details ▶", key="open_from_details"):
+        st.session_state.selected_patient_id = chosen[0]
+        st.success("Opened patient.")
+        st.rerun()
+else:
+    st.info("No patients found. Add one in **Add Patient**.")
+    st.stop()
+
+pid = st.session_state.get("selected_patient_id")
+if not pid and ids_labels:
+    st.session_state.selected_patient_id = ids_labels[0][0]
+    pid = st.session_state.selected_patient_id
 
 def _get_patient(pid: int):
     rows = q("""SELECT id,patient_name,hospital_number,nhs_number,date_of_birth,reason_for_admission,pmh,psh,dh,allergies,created_at,updated_at FROM patients WHERE id=?""",(pid,))
     return rows[0] if rows else None
 
-pid = st.session_state.get("selected_patient_id")
-if not pid:
-    all_df = df("SELECT id, patient_name, hospital_number FROM patients ORDER BY created_at DESC")
-    choices = [(int(r["id"]), f'{r["patient_name"]} • {r["hospital_number"]} (ID {int(r["id"])})') for _, r in all_df.iterrows()]
-    if choices:
-        pick = st.selectbox("Choose a patient", options=choices, format_func=lambda x: x[1])
-        if st.button("Load ▶"):
-            st.session_state.selected_patient_id = pick[0]
-            st.rerun()
-    else:
-        st.info("No patients found. Add one in **Add Patient**.")
-        st.stop()
-
-pid = st.session_state.get("selected_patient_id")
 p = _get_patient(pid)
 if not p:
-    st.info("Select a valid patient from Patients page.")
+    st.info("Select a valid patient.")
     st.stop()
 
 pid, name, hosp, nhs, dob, reason, pmh, psh, dh, allergies, created_at, updated_at = p

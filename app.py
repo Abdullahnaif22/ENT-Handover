@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from auth import require_auth, logout_button
-from db import ensure_schema, DB_PATH, df
+from db import ensure_schema, df
 from utils import dob_to_age
 
 # Page config + CSS
@@ -28,9 +28,8 @@ st.markdown("""
 ensure_schema()
 require_auth()
 
-# Sidebar (no custom Navigate)
+# Sidebar (DB path hidden now)
 st.sidebar.title("🏥 ENT Handover")
-st.sidebar.caption(f"DB file: `{DB_PATH}`")
 logout_button()
 
 # Quick search specific to this page
@@ -67,19 +66,5 @@ st.dataframe(
     data if not data.empty else pd.DataFrame(columns=["id","Patient","Hosp No","NHS No","Age","Reason","Open Jobs","Created"]),
     use_container_width=True, hide_index=True
 )
-
-ids_labels = []
-if not data.empty:
-    for _, r in data.iterrows():
-        ids_labels.append((int(r["id"]), f'{r["Patient"]} • {r["Hosp No"]} (ID {int(r["id"])})'))
-
-st.markdown("**Open patient:**")
-if ids_labels:
-    chosen = st.selectbox("Select", options=ids_labels, format_func=lambda x: x[1], label_visibility="collapsed", key="patients_selectbox_home")
-    if st.button("Open details ▶"):
-        st.session_state.selected_patient_id = chosen[0]
-        st.success("Opened patient details. Go to **Patient Details** from the sidebar.")
-else:
-    st.caption("No patients match your filters.")
 
 st.caption("Built for ENT handovers • SQLite backend • Login: demo credentials")

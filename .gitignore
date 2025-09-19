@@ -2,13 +2,12 @@
 __pycache__/
 *.pyc
 
-# Streamlit
-.streamlit/secrets.toml
+# Streamlit cache
+.streamlit/
+**/.streamlit/
 
-# SQLite (if you don’t want to commit local data)
+# SQLite (don’t commit live data)
 *.db
-*.sqlite
-
-# OS/Editor
-.DS_Store
-.vscode/
+*.db-shm
+*.db-wal
+*.sqlite3

@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+
+# Streamlit
+.streamlit/secrets.toml
+
+# SQLite (if you don’t want to commit local data)
+*.db
+*.sqlite
+
+# OS/Editor
+.DS_Store
+.vscode/
